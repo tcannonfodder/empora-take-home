@@ -5,6 +5,7 @@ ruby "3.2.1"
 
 gem 'csv'
 gem 'httpx'
+gem 'dotenv', require: 'dotenv/load'
 
 group :development, :test do
   gem "debug"

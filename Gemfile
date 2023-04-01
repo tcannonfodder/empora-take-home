@@ -4,7 +4,7 @@ git_source(:github) { |repo| "https://github.com/#{repo}.git" }
 ruby "3.2.1"
 
 gem 'csv'
-gem 'httpx'
+gem 'smartystreets_ruby_sdk'
 gem 'dotenv', require: 'dotenv/load'
 
 group :development, :test do

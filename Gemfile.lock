@@ -13,9 +13,6 @@ GEM
     docile (1.4.0)
     dotenv (2.8.1)
     hashdiff (1.0.1)
-    http-2-next (0.5.1)
-    httpx (0.22.5)
-      http-2-next (>= 0.4.1)
     io-console (0.6.0)
     irb (1.6.3)
       reline (>= 0.3.0)
@@ -57,6 +54,7 @@ GEM
       simplecov_json_formatter (~> 0.1)
     simplecov-html (0.12.3)
     simplecov_json_formatter (0.1.4)
+    smartystreets_ruby_sdk (5.14.19)
     unicode-display_width (2.4.2)
     webmock (3.18.1)
       addressable (>= 2.8.0)
@@ -70,13 +68,13 @@ DEPENDENCIES
   csv
   debug
   dotenv
-  httpx
   m
   minitest (~> 5.0)
   mocha
   rake (~> 13.0)
   rubocop (~> 1.21)
   simplecov
+  smartystreets_ruby_sdk
   webmock
 
 RUBY VERSION

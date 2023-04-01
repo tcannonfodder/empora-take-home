@@ -16,34 +16,8 @@ class AddressCSVTransformer
   end
 
   def validate!
-    original_rows = {}
     parsed_csv.lazy.each_slice(client.max_batch_size).each do |row_batch|
-      row_batch.each do |row|
-        row_key = client.class.input_id(street: row[:street], city: row[:city], zip_code: row[:zip_code])
-        original_rows[row_key] = row.to_s.strip
-        client.add_lookup(street: row[:street], city: row[:city], zip_code: row[:zip_code])
-      end
-
-      client.load_results
-      client.batch.each do |lookup|
-        original_row = original_rows[lookup.input_id]
-
-        if lookup.result.empty?
-          validated_result = :"Invalid Address"
-        else
-          validated_address = lookup.result.first
-
-          address = [validated_address.delivery_line_1, validated_address.delivery_line_2]
-          city = validated_address.components.city_name
-          zip_code = [validated_address.components.zipcode, validated_address.components.plus4_code].join('-')
-
-          validated_result = [address, city, zip_code].flatten.compact.join(', ')
-        end
-
-        validated_results[lookup.input_id] = [original_row, validated_result].join(' -> ')
-      end
-
-      client.batch.clear
+      validate_batch!(row_batch: row_batch)
     end
 
     return validated_results
@@ -58,5 +32,38 @@ class AddressCSVTransformer
     @parsed_csv = CSV.parse(input_stream, headers: true, header_converters: :symbol)
     @parsed_csv.by_row!
     return @parsed_csv
+  end
+
+  protected
+
+  def validate_batch!(row_batch:)
+    original_rows = {}
+
+    row_batch.each do |row|
+      row_key = client.class.input_id(street: row[:street], city: row[:city], zip_code: row[:zip_code])
+      original_rows[row_key] = row.to_s.strip
+      client.add_lookup(street: row[:street], city: row[:city], zip_code: row[:zip_code])
+    end
+
+    client.load_results
+    client.batch.each do |lookup|
+      original_row = original_rows[lookup.input_id]
+
+      if lookup.result.empty?
+        validated_result = :"Invalid Address"
+      else
+        validated_address = lookup.result.first
+
+        address = [validated_address.delivery_line_1, validated_address.delivery_line_2]
+        city = validated_address.components.city_name
+        zip_code = [validated_address.components.zipcode, validated_address.components.plus4_code].compact.join('-')
+
+        validated_result = [address, city, zip_code].flatten.compact.join(', ')
+      end
+
+      validated_results[lookup.input_id] = [original_row, validated_result].join(' -> ')
+    end
+
+    client.batch.clear
   end
 end

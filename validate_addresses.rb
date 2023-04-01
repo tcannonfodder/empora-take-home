@@ -3,10 +3,15 @@ Bundler.require(:default)
 require_relative "lib/address_csv_transformer"
 require_relative "lib/address_verification_client"
 
+client = AddressVerificationClient.new(
+  auth_id: ENV.fetch("SMARTY_AUTH_ID"),
+  auth_token: ENV.fetch("SMARTY_AUTH_TOKEN")
+)
+
+
 transformer = AddressCSVTransformer.new(
   input_stream: ARGF.to_io,
-  smarty_auth_id: ENV.fetch("SMARTY_AUTH_ID"),
-  smarty_auth_token: ENV.fetch("SMARTY_AUTH_TOKEN")
+  client: client
 )
 
 transformer.validate!

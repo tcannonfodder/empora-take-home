@@ -6,12 +6,8 @@ class AddressCSVTransformer
   attr_accessor :input_stream, :output_stream
   attr_reader :client, :parsed_csv, :validated_results
 
-  def initialize(input_stream:, smarty_auth_id:, smarty_auth_token:, max_batch_size: 100)
-    @client = AddressVerificationClient.new(
-      auth_id: smarty_auth_id,
-      auth_token: smarty_auth_token,
-      max_batch_size: max_batch_size
-    )
+  def initialize(input_stream:, client:)
+    @client = client
     self.input_stream = input_stream
   end
 

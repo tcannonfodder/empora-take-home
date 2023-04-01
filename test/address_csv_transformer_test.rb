@@ -14,14 +14,8 @@ class AddressCSVTransformerTest < Minitest::Test
     return lookup
   end
 
-  test "sets up the client with the given smarty_auth_id and smarty_auth_token, a default max_batch_size of 100" do
-    AddressVerificationClient.expects(:new).once.with(auth_id: "abcd1234", auth_token: "12222", max_batch_size: 100)
-    transformer = AddressCSVTransformer.new(input_stream: StringIO.new, smarty_auth_id: "abcd1234", smarty_auth_token: "12222")
-  end
-
-  test "sets up the client with the given smarty_auth_id and smarty_auth_token, and custom max_batch_size" do
-    AddressVerificationClient.expects(:new).once.with(auth_id: "abcd1234", auth_token: "12222", max_batch_size: 20)
-    transformer = AddressCSVTransformer.new(input_stream: StringIO.new, smarty_auth_id: "abcd1234", smarty_auth_token: "12222", max_batch_size: 20)
+  def build_client
+    AddressVerificationClient.new(auth_id: "abcd1234", auth_token: "12222")
   end
 
   test "stores the input_stream" do
@@ -31,7 +25,7 @@ class AddressCSVTransformerTest < Minitest::Test
       1 Empora St, Title, 11111
     CSV
     )
-    transformer = AddressCSVTransformer.new(input_stream: stream, smarty_auth_id: "abcd1234", smarty_auth_token: "12222")
+    transformer = AddressCSVTransformer.new(input_stream: stream, client: build_client)
 
     assert_equal stream, transformer.input_stream
   end
@@ -47,7 +41,7 @@ class AddressCSVTransformerTest < Minitest::Test
     CSV
     )
 
-    transformer = AddressCSVTransformer.new(input_stream: stream, smarty_auth_id: "abcd1234", smarty_auth_token: "12222")
+    transformer = AddressCSVTransformer.new(input_stream: stream, client: build_client)
 
     transformer.client.expects(:add_lookup).with(street: "143 e Maine Street", city: " Columbus", zip_code: " 43215")
     transformer.client.expects(:add_lookup).with(street: "1 Infinite Loop", city: " cupertino", zip_code: " 95014")
@@ -114,7 +108,8 @@ class AddressCSVTransformerTest < Minitest::Test
     CSV
     )
 
-    transformer = AddressCSVTransformer.new(input_stream: stream, smarty_auth_id: "abcd1234", smarty_auth_token: "12222", max_batch_size: 2)
+    client = AddressVerificationClient.new(auth_id: "abcd1234", auth_token: "12222", max_batch_size: 2)
+    transformer = AddressCSVTransformer.new(input_stream: stream, client: client)
 
     slices = transformer.parsed_csv.lazy.each_slice(2).to_a
 
@@ -136,7 +131,7 @@ class AddressCSVTransformerTest < Minitest::Test
     CSV
     )
 
-    transformer = AddressCSVTransformer.new(input_stream: stream, smarty_auth_id: "abcd1234", smarty_auth_token: "12222")
+    transformer = AddressCSVTransformer.new(input_stream: stream, client: build_client)
 
     transformer.client.expects(:add_lookup).with(street: "143 e Maine Street", city: " Columbus", zip_code: " 43215")
     transformer.client.expects(:add_lookup).with(street: "1 Infinite Loop", city: " cupertino", zip_code: " 95014")
@@ -209,7 +204,7 @@ class AddressCSVTransformerTest < Minitest::Test
       25 Draper St.,"Greenville, SC", 22222
     CSV
     )
-    transformer = AddressCSVTransformer.new(input_stream: stream, smarty_auth_id: "abcd1234", smarty_auth_token: "12222")
+    transformer = AddressCSVTransformer.new(input_stream: stream, client: build_client)
 
     parsed_csv = transformer.parsed_csv
 
@@ -241,7 +236,7 @@ class AddressCSVTransformerTest < Minitest::Test
 
   test "parsed_csv: raises an exception if the input_stream cannot be parsed as a CSV" do
     stream = StringIO.new({a: "basdde"}.to_json)
-    transformer = AddressCSVTransformer.new(input_stream: stream, smarty_auth_id: "abcd1234", smarty_auth_token: "12222")
+    transformer = AddressCSVTransformer.new(input_stream: stream, client: build_client)
 
     assert_raises CSV::MalformedCSVError do
       transformer.parsed_csv
@@ -258,7 +253,7 @@ class AddressCSVTransformerTest < Minitest::Test
       25 Draper St.,"Greenville, SC, 22222
     CSV
     )
-    transformer = AddressCSVTransformer.new(input_stream: stream, smarty_auth_id: "abcd1234", smarty_auth_token: "12222")
+    transformer = AddressCSVTransformer.new(input_stream: stream, client: build_client)
 
     assert_raises CSV::MalformedCSVError do
       transformer.parsed_csv
@@ -266,7 +261,7 @@ class AddressCSVTransformerTest < Minitest::Test
   end
 
   test "parsed_csv: does nothing if the input_stream is empty" do
-    transformer = AddressCSVTransformer.new(input_stream: StringIO.new, smarty_auth_id: "abcd1234", smarty_auth_token: "12222")
+    transformer = AddressCSVTransformer.new(input_stream: StringIO.new, client: build_client)
 
     assert_equal true, transformer.parsed_csv.empty?
   end

@@ -16,3 +16,6 @@ require_relative 'test_helper/declarative_test_patch'
 $LOAD_PATH.unshift File.expand_path("../lib", __dir__)
 
 require "minitest/autorun"
+
+require_relative "../lib/address_csv_transformer"
+require_relative "../lib/address_verification_client"

@@ -10,15 +10,15 @@ class AddressVerificationClient
   def initialize(auth_id:, auth_token:, max_batch_size: 100)
     @max_batch_size = [max_batch_size, SmartyStreets::Batch::MAX_BATCH_SIZE].min
     @credentials = SmartyStreets::StaticCredentials.new(auth_id, auth_token)
-    @batch ||= SmartyStreets::Batch.new
+    @batch = SmartyStreets::Batch.new
   end
 
   def add_lookup(street:, city:, zip_code:)
     freeform_street = [street, city, zip_code].join(', ')
     input_id = self.class.input_id(street: street, city: city, zip_code: zip_code)
 
-    return batch.get_by_input_id(input_id) unless batch.get_by_input_id(input_id).nil?
-    raise BatchTooLarge if !can_add_lookup? || batch.full?
+    return true unless batch.get_by_input_id(input_id).nil?
+    raise BatchFull if !can_add_lookup? || batch.full?
 
     lookup = SmartyStreets::USStreet::Lookup.new
     lookup.input_id = input_id

@@ -17,7 +17,7 @@ class AddressCSVTransformer
 
   def validate!
     original_rows = {}
-    parsed_csv.each_slice(client.max_batch_size).each do |row_batch|
+    parsed_csv.lazy.each_slice(client.max_batch_size).each do |row_batch|
       row_batch.each do |row|
         row_key = client.class.input_id(street: row[:street], city: row[:city], zip_code: row[:zip_code])
         original_rows[row_key] = row.to_s.strip

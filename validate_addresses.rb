@@ -11,6 +11,6 @@ transformer = AddressCSVTransformer.new(
 
 transformer.validate!
 
-transformer.validated_results.values.each do |result|
+transformer.validated_results.values.lazy.each do |result|
   puts result
 end

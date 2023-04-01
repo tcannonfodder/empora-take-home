@@ -166,6 +166,30 @@ class AddressVerificationClientTest < Minitest::Test
     client.add_lookup(street: "25 Draper St.", city: "Greenville", zip_code: "22222")
 
     client.load_results
+
+    assert_equal 1, client.batch.size
+
+    assert_equal "25 Draper Street", client.batch[0].result.first.delivery_line_1
+    assert_nil client.batch[0].result.first.delivery_line_2
+    assert_equal "Greenville", client.batch[0].result.first.components.city_name
+    assert_equal "22222", client.batch[0].result.first.components.zipcode
+    assert_equal "6542", client.batch[0].result.first.components.plus4_code
+  end
+
+  test "load_results: loads a single lookup as a GET request, returning an empty array if there are no results" do
+    stub_request(:get,
+      "https://us-street.api.smartystreets.com/street-address?addressee&auth-id=abcd1234&auth-token=2122222&candidates=1&city&input_id=25%20Draper%20St.Greenville22222&lastline&license=us-core-cloud&match=strict&secondary&state&street=25%20Draper%20St.,%20Greenville,%2022222&street2&urbanization&zipcode"
+    ).to_return(status: 200, body: [].to_json)
+
+
+    client = AddressVerificationClient.new(auth_id: "abcd1234", auth_token: "2122222")
+    client.add_lookup(street: "25 Draper St.", city: "Greenville", zip_code: "22222")
+
+    client.load_results
+
+    assert_equal 1, client.batch.size
+
+    assert_empty client.batch[0].result
   end
 
   test "load_results: loads a batch of lookups as a POST request" do
@@ -177,8 +201,45 @@ class AddressVerificationClientTest < Minitest::Test
     client.add_lookup(street: "1 Santa Claus", city: "North Pole", zip_code: "99705")
     client.add_lookup(street: "1 Infinite Loop", city: "cupertino", zip_code: "95014")
 
+    client.load_results
+
+    assert_equal 2, client.batch.size
+
+    assert_equal "1 Santa Claus Ln", client.batch[0].result.first.delivery_line_1
+    assert_nil client.batch[0].result.first.delivery_line_2
+    assert_equal "North Pole", client.batch[0].result.first.components.city_name
+    assert_equal "99705", client.batch[0].result.first.components.zipcode
+    assert_equal "9901", client.batch[0].result.first.components.plus4_code
+
+    assert_equal "1 Infinite Loop", client.batch[1].result.first.delivery_line_1
+    assert_nil client.batch[1].result.first.delivery_line_2
+    assert_equal "Cupertino", client.batch[1].result.first.components.city_name
+    assert_equal "95014", client.batch[1].result.first.components.zipcode
+    assert_equal "2083", client.batch[1].result.first.components.plus4_code
+  end
+
+  test "load_results: loads a batch of lookups as a POST request with an empty resultset" do
+    only_one_result = [north_pole_and_apple_response.first]
+
+    stub_request(:post, "https://us-street.api.smartystreets.com/street-address?auth-id=abcd1234&auth-token=2122222&license=us-core-cloud")
+      .with(body: north_pole_and_apple_request_payload.to_json)
+      .to_return(status: 200, body: only_one_result.to_json)
+
+    client = AddressVerificationClient.new(auth_id: "abcd1234", auth_token: "2122222")
+    client.add_lookup(street: "1 Santa Claus", city: "North Pole", zip_code: "99705")
+    client.add_lookup(street: "1 Infinite Loop", city: "cupertino", zip_code: "95014")
 
     client.load_results
+
+    assert_equal 2, client.batch.size
+
+    assert_equal "1 Santa Claus Ln", client.batch[0].result.first.delivery_line_1
+    assert_nil client.batch[0].result.first.delivery_line_2
+    assert_equal "North Pole", client.batch[0].result.first.components.city_name
+    assert_equal "99705", client.batch[0].result.first.components.zipcode
+    assert_equal "9901", client.batch[0].result.first.components.plus4_code
+
+    assert_empty client.batch[1].result
   end
 
   test "load_results: raises BadCredentialsError if the API request returns 401" do

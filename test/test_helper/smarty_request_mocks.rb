@@ -85,6 +85,7 @@ module SmartyRequestMocks
   def north_pole_and_apple_response
     [
       {
+        "input_id": "1 Santa ClausNorth Pole99705",
         "input_index": 0,
         "candidate_index": 0,
         "delivery_line_1": "1 Santa Claus Ln",
@@ -130,6 +131,7 @@ module SmartyRequestMocks
         }
       },
       {
+        "input_id": "1 Infinite Loopcupertino95014",
         "input_index": 1,
         "candidate_index": 0,
         "addressee": "Apple Inc",

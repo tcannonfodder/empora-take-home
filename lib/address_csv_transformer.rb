@@ -4,17 +4,20 @@ require 'csv'
 
 class AddressCSVTransformer
   attr_accessor :input_stream, :output_stream
-  attr_reader :client, :parsed_csv, :validated_results
+  attr_reader :address_lookup, :parsed_csv, :validated_results
 
-  def initialize(input_stream:, client:)
-    @client = client
+  def initialize(input_stream:, address_lookup:)
+    @address_lookup = address_lookup
+    @validated_results = {}
     self.input_stream = input_stream
   end
 
   def validate!
-    parsed_csv.lazy.each_slice(client.max_batch_size).each do |row_batch|
-      validate_batch!(row_batch: row_batch)
+    parsed_csv.lazy.each do |row|
+      validate_row!(row: row)
     end
+
+    address_lookup.write_cache!
 
     return validated_results
   end
@@ -32,34 +35,12 @@ class AddressCSVTransformer
 
   protected
 
-  def validate_batch!(row_batch:)
-    original_rows = {}
+  def validate_row!(row:)
+    input_id = address_lookup.input_id(street: row[:street], city: row[:city], zip_code: row[:zip_code])
+    original_row = row.to_s.strip
 
-    row_batch.each do |row|
-      row_key = client.class.input_id(street: row[:street], city: row[:city], zip_code: row[:zip_code])
-      original_rows[row_key] = row.to_s.strip
-      client.add_lookup(street: row[:street], city: row[:city], zip_code: row[:zip_code])
-    end
+    validated_result = address_lookup.cached_lookup(street: row[:street], city: row[:city], zip_code: row[:zip_code])
 
-    client.load_results
-    client.batch.each do |lookup|
-      original_row = original_rows[lookup.input_id]
-
-      if lookup.result.empty?
-        validated_result = :"Invalid Address"
-      else
-        validated_address = lookup.result.first
-
-        address = [validated_address.delivery_line_1, validated_address.delivery_line_2]
-        city = validated_address.components.city_name
-        zip_code = [validated_address.components.zipcode, validated_address.components.plus4_code].compact.join('-')
-
-        validated_result = [address, city, zip_code].flatten.compact.join(', ')
-      end
-
-      validated_results[lookup.input_id] = [original_row, validated_result].join(' -> ')
-    end
-
-    client.batch.clear
+    validated_results[input_id] = [original_row, validated_result].join(' -> ')
   end
 end
